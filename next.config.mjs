@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configured to ignore typescript errors during build to prevent build failures
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+
+
   images: {
     remotePatterns: [
       {
