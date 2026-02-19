@@ -58,10 +58,25 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; variant: string; class
         variant: 'outline',
         className: 'bg-emerald-50 text-emerald-700 border-emerald-300',
     },
+    paid: {
+        label: 'Pagado',
+        variant: 'outline',
+        className: 'bg-green-50 text-green-700 border-green-300',
+    },
     shipped: {
         label: 'Enviado',
         variant: 'outline',
         className: 'bg-blue-50 text-blue-700 border-blue-300',
+    },
+    delivered: {
+        label: 'Entregado',
+        variant: 'outline',
+        className: 'bg-teal-50 text-teal-700 border-teal-300',
+    },
+    cancelled: {
+        label: 'Cancelado',
+        variant: 'outline',
+        className: 'bg-zinc-100 text-zinc-600 border-zinc-300',
     },
     rejected: {
         label: 'Rechazado',
@@ -212,7 +227,10 @@ export function OrderDetailSheet({
                                     <SelectContent>
                                         <SelectItem value="pending">⏳ Pendiente</SelectItem>
                                         <SelectItem value="approved">✅ Aprobado</SelectItem>
+                                        <SelectItem value="paid">💰 Pagado</SelectItem>
                                         <SelectItem value="shipped">🚚 Enviado</SelectItem>
+                                        <SelectItem value="delivered">📦 Entregado</SelectItem>
+                                        <SelectItem value="cancelled">🚫 Cancelado</SelectItem>
                                         <SelectItem value="rejected">❌ Rechazado</SelectItem>
                                     </SelectContent>
                                 </Select>

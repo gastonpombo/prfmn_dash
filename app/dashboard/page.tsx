@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getOrders } from '@/app/dashboard/orders/actions'
 import type { Order, Product } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -57,16 +58,14 @@ export default function DashboardPage() {
   const loadDashboardStats = async () => {
     setLoading(true)
     try {
-      // Get all products
+      // Get all products (public read is fine for products/active status)
       const { data: allProducts } = await supabase
         .from('products')
         .select('*')
 
-      // Get all orders with items
-      const { data: allOrders } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Get all orders via server action to bypass RLS
+      const { data: rawOrders } = await getOrders('all')
+      const allOrders = rawOrders as unknown as Order[] | null
 
       if (allProducts && allOrders) {
         // Calculate KPIs
@@ -80,7 +79,7 @@ export default function DashboardPage() {
         const lowStockCount = lowStockProducts.length
 
         // Get recent orders (last 5)
-        const recentOrders = allOrders.slice(0, 5)
+        const recentOrders = (allOrders ?? []).slice(0, 5)
 
         // Calculate sales by month (last 12 months)
         const salesByMonth = calculateSalesByMonth(allOrders)

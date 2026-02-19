@@ -35,7 +35,10 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'pending', label: 'Pendiente' },
   { value: 'approved', label: 'Aprobado' },
+  { value: 'paid', label: 'Pagado' },
   { value: 'shipped', label: 'Enviado' },
+  { value: 'delivered', label: 'Entregado' },
+  { value: 'cancelled', label: 'Cancelado' },
   { value: 'rejected', label: 'Rechazado' },
 ]
 
@@ -43,7 +46,10 @@ const FILTER_ACTIVE_CLASS: Record<FilterStatus, string> = {
   all: 'bg-neutral-900 text-white border-neutral-900',
   pending: 'bg-amber-600 text-white border-amber-600',
   approved: 'bg-emerald-600 text-white border-emerald-600',
+  paid: 'bg-green-600 text-white border-green-600',
   shipped: 'bg-blue-600 text-white border-blue-600',
+  delivered: 'bg-teal-600 text-white border-teal-600',
+  cancelled: 'bg-zinc-500 text-white border-zinc-500',
   rejected: 'bg-red-600 text-white border-red-600',
 }
 

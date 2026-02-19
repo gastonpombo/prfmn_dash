@@ -47,7 +47,7 @@ export type CustomerDetails = {
   shipping_type?: 'domicilio' | 'sucursal' | string
 }
 
-export type OrderStatus = 'pending' | 'approved' | 'shipped' | 'rejected'
+export type OrderStatus = 'pending' | 'approved' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'rejected'
 
 export type Order = {
   id: number
