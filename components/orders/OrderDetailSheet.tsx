@@ -41,9 +41,13 @@ import {
     Hash,
     Save,
     Loader2,
+    MessageCircle,
 } from 'lucide-react'
 import { updateOrderStatus, updateOrderNotes } from '@/app/dashboard/orders/actions'
 import type { Order, OrderStatus } from '@/lib/supabase'
+
+// Statuses considered "failed" — triggers the WhatsApp CTA
+const FAILED_STATUSES: OrderStatus[] = ['rejected', 'cancelled']
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -76,12 +80,12 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; variant: string; class
     cancelled: {
         label: 'Cancelado',
         variant: 'outline',
-        className: 'bg-zinc-100 text-zinc-600 border-zinc-300',
+        className: 'bg-red-500/10 text-red-500 border-red-500/20',
     },
     rejected: {
-        label: 'Rechazado',
+        label: 'Pago Fallido',
         variant: 'outline',
-        className: 'bg-red-50 text-red-700 border-red-300',
+        className: 'bg-red-500/10 text-red-500 border-red-500/20',
     },
 }
 
@@ -204,6 +208,40 @@ export function OrderDetailSheet({
                         <StatusBadge status={order.status} />
                     </div>
                 </SheetHeader>
+
+                {/* ── WhatsApp CTA (only for failed orders) ── */}
+                {FAILED_STATUSES.includes(order.status) && (
+                    (() => {
+                        const name = order.customer_details?.name?.split(' ')[0] ?? 'cliente'
+                        const phone = order.customer_details?.phone?.replace(/\D/g, '') ?? ''
+                        const msg = encodeURIComponent(
+                            `Hola ${name}! 👋 Vi que tuviste un inconveniente con el pago de tu perfume en PerfuMan. ` +
+                            `¿Te puedo ayudar a resolverlo? 🌸`
+                        )
+                        const href = phone
+                            ? `https://wa.me/${phone}?text=${msg}`
+                            : `https://wa.me/?text=${msg}`
+                        return (
+                            <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 transition-colors hover:bg-red-500/10"
+                            >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500 flex-shrink-0">
+                                    <MessageCircle className="h-5 w-5 text-white" />
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-red-500">Pago fallido — contactar al cliente</p>
+                                    <p className="text-xs text-neutral-500 truncate">
+                                        Contactar por WhatsApp{phone ? ` · +${phone}` : ''}
+                                    </p>
+                                </div>
+                                <span className="ml-auto text-xs font-semibold text-green-600 whitespace-nowrap">Abrir WA →</span>
+                            </a>
+                        )
+                    })()
+                )}
 
                 <div className="flex-1 overflow-y-auto">
                     {/* ── Admin Actions ── */}

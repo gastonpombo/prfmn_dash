@@ -49,8 +49,8 @@ const FILTER_ACTIVE_CLASS: Record<FilterStatus, string> = {
   paid: 'bg-green-600 text-white border-green-600',
   shipped: 'bg-blue-600 text-white border-blue-600',
   delivered: 'bg-teal-600 text-white border-teal-600',
-  cancelled: 'bg-zinc-500 text-white border-zinc-500',
-  rejected: 'bg-red-600 text-white border-red-600',
+  cancelled: 'bg-red-500/10 text-red-500 border-red-500/20',
+  rejected: 'bg-red-500 text-white border-red-500',
 }
 
 function formatCurrency(amount: number) {
