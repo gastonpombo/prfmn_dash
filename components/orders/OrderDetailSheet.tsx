@@ -102,6 +102,19 @@ function formatCurrency(amount: number) {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)
 }
 
+/** Prevents React Error #31: safely coerces any value to a displayable string. */
+function safeStr(value: unknown): string | null {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'string') return value || null
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+    if (typeof value === 'object') {
+        const parts = Object.values(value as Record<string, unknown>)
+            .filter((v) => v !== null && v !== undefined && v !== '').map(String)
+        return parts.length > 0 ? parts.join(', ') : null
+    }
+    return null
+}
+
 // ─── Info Row ─────────────────────────────────────────────────────────────────
 
 function InfoRow({
@@ -111,15 +124,16 @@ function InfoRow({
 }: {
     icon: React.ElementType
     label: string
-    value?: string | null
+    value?: unknown
 }) {
-    if (!value) return null
+    const display = safeStr(value)
+    if (!display) return null
     return (
         <div className="flex items-start gap-3">
             <Icon className="h-4 w-4 text-neutral-400 mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
                 <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">{label}</p>
-                <p className="text-sm text-neutral-900 font-medium mt-0.5 break-words">{value}</p>
+                <p className="text-sm text-neutral-900 font-medium mt-0.5 break-words">{display}</p>
             </div>
         </div>
     )
