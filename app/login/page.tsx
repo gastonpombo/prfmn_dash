@@ -1,48 +1,20 @@
 'use client'
 
-import React from "react"
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import React, { useActionState } from "react"
+import { signInAction } from "./actions"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 
+// Initial state for the form action
+const initialState = {
+  error: '',
+}
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) {
-        setError(signInError.message)
-        setLoading(false)
-        return
-      }
-
-      if (data.user) {
-        router.push('/dashboard')
-      }
-    } catch (err) {
-      setError('Error al iniciar sesión. Por favor, intenta de nuevo.')
-      setLoading(false)
-    }
-  }
+  const [state, formAction, isPending] = useActionState(signInAction, initialState)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-rose-50 p-4">
@@ -73,25 +45,23 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {error && (
+          {state?.error && (
             <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{state.error}</AlertDescription>
             </Alert>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form action={formAction} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-neutral-700 font-medium">
                 Correo Electrónico
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="admin@perfuman.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
                 className="h-11 border-neutral-300 focus:border-amber-500 focus:ring-amber-500/20"
               />
             </div>
@@ -102,22 +72,20 @@ export default function LoginPage() {
               </Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={loading}
                 className="h-11 border-neutral-300 focus:border-amber-500 focus:ring-amber-500/20"
               />
             </div>
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="w-full h-11 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-medium shadow-lg shadow-amber-500/20 transition-all"
             >
-              {loading ? (
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Iniciando sesión...

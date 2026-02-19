@@ -4,9 +4,10 @@ import React from "react"
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import { signOutAction } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Package, LogOut, Loader2, ShoppingCart, Settings, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, LogOut, Loader2, ShoppingCart, Settings, Menu, X, Tag, Palette } from 'lucide-react'
 import Link from 'next/link'
 
 export default function DashboardLayout({
@@ -21,29 +22,30 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
+    const supabase = createClient()
+
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      setUser(user)
+      setLoading(false)
+    }
+
     checkUser()
-  }, [])
+  }, [router])
 
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [pathname])
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    setUser(user)
-    setLoading(false)
-  }
-
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    await signOutAction()
   }
 
   if (loading) {
@@ -74,6 +76,16 @@ export default function DashboardLayout({
       label: 'Pedidos',
       href: '/dashboard/orders',
       icon: ShoppingCart,
+    },
+    {
+      label: 'Marcas',
+      href: '/dashboard/brands',
+      icon: Tag,
+    },
+    {
+      label: 'Apariencia',
+      href: '/dashboard/appearance',
+      icon: Palette,
     },
     {
       label: 'Configuración',
@@ -140,8 +152,8 @@ export default function DashboardLayout({
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={`w-full justify-start gap-3 h-11 ${isActive
-                        ? 'bg-amber-50 text-amber-900 hover:bg-amber-100'
-                        : 'text-neutral-600 hover:bg-neutral-50'
+                      ? 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                      : 'text-neutral-600 hover:bg-neutral-50'
                       }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -212,8 +224,8 @@ export default function DashboardLayout({
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={`w-full justify-start gap-3 h-11 ${isActive
-                        ? 'bg-amber-50 text-amber-900 hover:bg-amber-100'
-                        : 'text-neutral-600 hover:bg-neutral-50'
+                      ? 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                      : 'text-neutral-600 hover:bg-neutral-50'
                       }`}
                   >
                     <Icon className="h-5 w-5" />

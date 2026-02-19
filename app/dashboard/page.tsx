@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase, type Order, type Product } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import type { Order, Product } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +37,7 @@ type DashboardStats = {
 }
 
 export default function DashboardPage() {
+  const supabase = createClient()
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
     totalRevenue: 0,

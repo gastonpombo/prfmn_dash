@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { supabase, type SiteConfig } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import type { SiteConfig } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +31,7 @@ const siteConfigSchema = z.object({
 type SiteConfigFormData = z.infer<typeof siteConfigSchema>
 
 export default function SettingsPage() {
+    const supabase = createClient()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [uploadingHero, setUploadingHero] = useState(false)

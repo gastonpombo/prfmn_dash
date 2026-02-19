@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // 1. Configurar Mercado Pago (Tu Access Token de Producción o Test)
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
 
 // 2. Configurar Supabase (Usamos la SERVICE_ROLE_KEY para poder escribir sin restricciones)
 // IMPORTANTE: Nunca uses la Service Role Key en el frontend, solo aquí en el backend.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase = createAdminClient()
 
 export async function POST(request: Request) {
   try {

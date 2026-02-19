@@ -3,7 +3,8 @@
 import React from "react"
 
 import { useEffect, useState } from 'react'
-import { supabase, type Product } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import type { Product } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,6 +42,7 @@ type Category = {
 }
 
 export default function ProductsPage() {
+  const supabase = createClient()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,6 +57,7 @@ export default function ProductsPage() {
     price: '',
     stock: '',
     category_id: '',
+    brand: '',
     top_notes: '',
     heart_notes: '',
     base_notes: '',
@@ -66,6 +69,9 @@ export default function ProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null)
+  const [transparentImageFile, setTransparentImageFile] = useState<File | null>(null)
+  const [transparentImagePreview, setTransparentImagePreview] = useState<string>('')
+  const [currentTransparentImageUrl, setCurrentTransparentImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
     loadCategories()
@@ -112,6 +118,18 @@ export default function ProductsPage() {
     }
   }
 
+  const handleTransparentImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setTransparentImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setTransparentImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -126,10 +144,14 @@ export default function ProductsPage() {
       time_of_day: '',
       longevity: '',
       sillage: '',
+      brand: '',
     })
     setImageFile(null)
     setImagePreview('')
     setCurrentImageUrl(null)
+    setTransparentImageFile(null)
+    setTransparentImagePreview('')
+    setCurrentTransparentImageUrl(null)
     setEditingId(null)
     setError('')
   }
@@ -142,6 +164,7 @@ export default function ProductsPage() {
       price: product.price.toString(),
       stock: product.stock.toString(),
       category_id: product.category ? categories.find(c => c.name === product.category)?.id.toString() || '' : '',
+      brand: product.brand || '',
       top_notes: product.top_notes || '',
       heart_notes: product.heart_notes || '',
       base_notes: product.base_notes || '',
@@ -151,8 +174,11 @@ export default function ProductsPage() {
       sillage: product.sillage || '',
     })
     setCurrentImageUrl(product.image_url)
+    setCurrentTransparentImageUrl(product.img_transparent_url)
     setImageFile(null)
     setImagePreview('')
+    setTransparentImageFile(null)
+    setTransparentImagePreview('')
     setError('')
     setDialogOpen(true)
   }
@@ -164,6 +190,7 @@ export default function ProductsPage() {
 
     try {
       let imageUrl = currentImageUrl
+      let transparentImageUrl = currentTransparentImageUrl
 
       // Upload new image if selected
       if (imageFile) {
@@ -190,13 +217,40 @@ export default function ProductsPage() {
         imageUrl = publicUrl
       }
 
+      // Upload new transparent image if selected
+      if (transparentImageFile) {
+        const fileExt = transparentImageFile.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_transparent.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, transparentImageFile)
+
+        if (uploadError) {
+          console.error('[v0] Upload error:', uploadError)
+          setError('Error al subir la imagen transparente: ' + uploadError.message)
+          setSaving(false)
+          return
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath)
+
+        transparentImageUrl = publicUrl
+      }
+
       const productData = {
         name: formData.name,
         description: formData.description || null,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         category: formData.category_id ? categories.find(c => c.id.toString() === formData.category_id)?.name || null : null,
+        brand: formData.brand || null,
         image_url: imageUrl,
+        img_transparent_url: transparentImageUrl,
         top_notes: formData.top_notes || null,
         heart_notes: formData.heart_notes || null,
         base_notes: formData.base_notes || null,
@@ -328,6 +382,20 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="brand" className="text-neutral-700 font-medium">
+                    Marca
+                  </Label>
+                  <Input
+                    id="brand"
+                    value={formData.brand}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    placeholder="Ej: Chanel, Dior..."
+                    disabled={saving}
+                    className="border-neutral-300 focus:border-amber-500 focus:ring-amber-500/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="description" className="text-neutral-700 font-medium">
                     Descripción
                   </Label>
@@ -409,8 +477,9 @@ export default function ProductsPage() {
                         <Label htmlFor="top_notes" className="text-neutral-700 font-medium">
                           Notas de Salida
                         </Label>
-                        <Input
+                        <Textarea
                           id="top_notes"
+                          rows={2}
                           value={formData.top_notes}
                           onChange={(e) => setFormData({ ...formData, top_notes: e.target.value })}
                           placeholder="Ej: Limón, Bergamota..."
@@ -423,8 +492,9 @@ export default function ProductsPage() {
                         <Label htmlFor="heart_notes" className="text-neutral-700 font-medium">
                           Notas de Corazón
                         </Label>
-                        <Input
+                        <Textarea
                           id="heart_notes"
+                          rows={2}
                           value={formData.heart_notes}
                           onChange={(e) => setFormData({ ...formData, heart_notes: e.target.value })}
                           placeholder="Ej: Jazmín, Rosa, Canela..."
@@ -437,8 +507,9 @@ export default function ProductsPage() {
                         <Label htmlFor="base_notes" className="text-neutral-700 font-medium">
                           Notas de Fondo
                         </Label>
-                        <Input
+                        <Textarea
                           id="base_notes"
+                          rows={2}
                           value={formData.base_notes}
                           onChange={(e) => setFormData({ ...formData, base_notes: e.target.value })}
                           placeholder="Ej: Vainilla, Oud, Ámbar..."
@@ -579,6 +650,59 @@ export default function ProductsPage() {
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
+                      disabled={saving}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="transparent_image" className="text-neutral-700 font-medium">
+                    Imagen sin fondo (PNG)
+                  </Label>
+                  <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center hover:border-amber-400 transition-colors">
+                    {transparentImagePreview || currentTransparentImageUrl ? (
+                      <div className="space-y-4">
+                        <div className="relative w-48 h-48 mx-auto rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 flex items-center justify-center">
+                          <img
+                            src={transparentImagePreview || currentTransparentImageUrl || "/placeholder.svg"}
+                            alt="Transparent Preview"
+                            className="object-contain w-full h-full"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setTransparentImageFile(null)
+                            setTransparentImagePreview('')
+                          }}
+                          disabled={saving}
+                        >
+                          Cambiar Imagen
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <ImageIcon className="h-12 w-12 text-neutral-400 mx-auto" />
+                        <div>
+                          <label
+                            htmlFor="transparent_image"
+                            className="cursor-pointer text-amber-600 hover:text-amber-700 font-medium"
+                          >
+                            Seleccionar archivo
+                          </label>
+                          <p className="text-sm text-neutral-500 mt-1">
+                            PNG recomendado
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <Input
+                      id="transparent_image"
+                      type="file"
+                      accept="image/png,image/*"
+                      onChange={handleTransparentImageChange}
                       disabled={saving}
                       className="hidden"
                     />

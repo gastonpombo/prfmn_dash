@@ -3,7 +3,7 @@
 import React from "react"
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,6 +34,7 @@ type Category = {
 }
 
 export default function CategoriesPage() {
+  const supabase = createClient()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
