@@ -88,3 +88,25 @@ export async function updateOrderNotes(
     revalidatePath('/dashboard/orders')
     return { success: true }
 }
+
+/**
+ * Calls the Supabase RPC `expire_old_pending_orders` to release stock
+ * from orders that have been pending for more than `minutesThreshold` minutes.
+ */
+export async function expireOldPendingOrders(
+    minutesThreshold = 60
+): Promise<{ success: boolean; affected?: number; error?: string }> {
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase.rpc('expire_old_pending_orders', {
+        minutes_threshold: minutesThreshold,
+    })
+
+    if (error) {
+        console.error('[orders/actions] expireOldPendingOrders:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/orders')
+    return { success: true, affected: data as number ?? 0 }
+}

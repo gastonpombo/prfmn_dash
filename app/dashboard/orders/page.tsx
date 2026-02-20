@@ -1,6 +1,6 @@
 'use client'
 
-import { getOrders } from './actions'
+import { getOrders, expireOldPendingOrders } from './actions'
 
 import { useEffect, useState, useCallback } from 'react'
 import type { Order, OrderStatus } from '@/lib/supabase'
@@ -24,6 +24,7 @@ import {
   Clock,
   TrendingUp,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { OrderDetailSheet, StatusBadge } from '@/components/orders/OrderDetailSheet'
 
@@ -92,6 +93,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -126,8 +128,30 @@ export default function OrdersPage() {
     setOrders((prev) =>
       prev.map((o) => (o.id === patch.id ? { ...o, ...patch } : o))
     )
-    // Also update the selected order so the sheet reflects changes immediately
     setSelectedOrder((prev) => (prev && prev.id === patch.id ? { ...prev, ...patch } : prev))
+  }
+
+  const handleCleanStock = async () => {
+    setCleaning(true)
+    try {
+      const result = await expireOldPendingOrders(60)
+      if (!result.success) {
+        toast.error(`Error al limpiar stock: ${result.error}`)
+      } else {
+        const n = result.affected ?? 0
+        if (n > 0) {
+          toast.success(`Stock liberado correctamente — ${n} pedido${n !== 1 ? 's' : ''} expirado${n !== 1 ? 's' : ''}`)
+        } else {
+          toast.success('Stock al día — no había pedidos expirados pendientes')
+        }
+        // Refresh the list to reflect newly-rejected orders
+        await loadOrders(false)
+      }
+    } catch (err: any) {
+      toast.error(`Error inesperado: ${err.message ?? String(err)}`)
+    } finally {
+      setCleaning(false)
+    }
   }
 
   const handleRowClick = (order: Order) => {
@@ -149,16 +173,32 @@ export default function OrdersPage() {
             Hacé clic en cualquier fila para ver el detalle y gestionar el pedido.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => loadOrders(false)}
-          disabled={refreshing}
-          className="h-8 border-neutral-300 text-neutral-600 hover:bg-neutral-50 gap-1.5"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Limpiar stock */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCleanStock}
+            disabled={cleaning || refreshing}
+            className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 gap-1.5 transition-colors"
+          >
+            {cleaning
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <Trash2 className="h-3.5 w-3.5" />}
+            {cleaning ? 'Limpiando...' : 'Limpiar stock'}
+          </Button>
+          {/* Actualizar */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadOrders(false)}
+            disabled={refreshing || cleaning}
+            className="h-8 border-neutral-300 text-neutral-600 hover:bg-neutral-50 gap-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* ── KPI Bar ── */}
